@@ -1,0 +1,615 @@
+import random
+import time
+
+GRID_SIZE = 10
+
+def clear_terminal(amt=25):
+    for i in range(amt):
+        print("")
+
+
+# Hi!
+# This is my first complete Python program!
+# I wrote it for Stanford's Code in Place course,
+# using skills learned both from that course and also
+# from the Intro to Python course I am in the middle of
+# taught by David Joyner at Georgia Tech.
+
+# It will be over-commented and over-explained, since the purpose
+# of this program is to showcase what I have learned in class.
+
+# I've left in some of the print statements used for debugging
+# (hashed out as comments) to leave as visible as much of the
+# process as possible.
+
+# This is a 1-player version of Battleship
+
+## Had some fun with making graphics letters in the console myself...
+print('''
+
+
+---------------------------------------------------------------------------------------------------------------------------
+|    """""""""""""            """""""     """""""""""""""""    """""""""""""""""   """                 """""""""""""""""  |
+|    """"""""""""""          """   """    """""""""""""""""    """""""""""""""""   """                 """""""""""""""""  |
+|    """        """         """     """          """                  """          """                 """                |
+|    """       """         """       """         """                  """          """                 """                |
+|    """""""""""          """""""""""""""        """                  """          """                 """""""""""""""""  |
+|    """""""""""         """""""""""""""""       """                  """          """                 """""""""""""""""  |
+|    """       """      """             """      """                  """          """                 """                |
+|    """         """   """               """     """                  """          """                 """                |
+|    """"""""""""""   """                 """    """                  """          """""""""""""""""   """""""""""""""""  |
+|    """""""""""     """                   """   """                  """          """""""""""""""""   """""""""""""""""  |
+---------------------------------------------------------------------------------------------------------------------------
+|                      """""""""""""""""   """           """   """""""""""""""""   """""""""""""""""                      |
+|                      """""""""""""""""   """           """   """""""""""""""""   """""""""""""""""                      |
+|       *  *  *        """                 """           """          """          """           """        *  *  *       |
+|        *****         """                 """           """          """          """           """         *****        |
+|    **************    """""""""""""""""   """""""""""""""""          """          """""""""""""""""     **************   |
+|                      """""""""""""""""   """""""""""""""""          """          """""""""""""""""                      |
+|                                    """   """           """          """          """                                    |
+|                                    """   """           """          """          """                                    |
+|                      """""""""""""""""   """           """   """""""""""""""""   """                                    |
+|                      """""""""""""""""   """           """   """""""""""""""""   """                                    |
+---------------------------------------------------------------------------------------------------------------------------           ''')
+time.sleep(3)
+print("")
+print("")
+print('''                                                    By Donald J. Conway''')
+time.sleep(1)
+print("")
+print("                                           Written for Stanford's Code in Place")
+print("")
+time.sleep(3)
+input("                                                 Press Enter to continue...")
+
+clear_terminal()
+
+#Some variables for tracking shots and hits
+hit_coordinates = []
+shells = 60
+
+
+print('''
+
+                    In this Battleship, you will play against yourself - and against bad luck!
+                             
+                                    You will start with a certain number of shells.
+                                    Should you expend all of your shells before sinking
+                                    the ships - you lose!
+                                    
+                    You will receive a ranking at the end depending upon the number of remaining shells.
+                        There are 6 possible ranks.
+                        
+                        
+                                        The field of battle is a grid of 10X10,
+                                        represented vertically by the letters A-J,
+                                        and horizontally by the numbers 1-10.''')
+print("")
+print("                                 Example of proper entry: 'A4' or 'a4'")
+print("")
+print("")
+print("                             You will need to press Enter after each event to continue:")
+print("")
+input("                                         Press Enter when ready!")
+
+clear_terminal()
+
+## The following gives us the labels for our axes when we print the grid:
+horiz_axis_nums = ["  ", '1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+vert_axis_letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
+
+## This provides some lists we can use for checking if a coordinate is valid
+## in two respects (for proper error messages): one list will be unaltered and
+## tell us if the coordinates specified are even on the grid at any point,
+## the other will tell us if the coordinates are STILL valid - I.E., whether
+## or not they have already been fired upon (valid_coordinates_2). This second
+## list will have coordinates removed as we progress through the game.
+valid_coordinates = []
+valid_coordinates_2 = []
+for letter in vert_axis_letters:
+    for num in horiz_axis_nums:
+        if " " not in num:
+            valid_coordinates += [letter + num]
+            valid_coordinates_2 += [letter + num]
+
+
+
+#print(valid_coordinates_2)
+
+## A dictionary of ship names, lengths, and status is created here, which
+## will be useful in the random selection of ship placements as well as
+## tracking which ships are not yet sunk.
+ship_direction = ["vert", "horiz"]
+ships = {'Carrier': {'length': 5, 'sunk': False},
+'Battleship': {'length': 4, 'sunk': False},
+'Cruiser': {'length': 3, 'sunk': False},
+'Submarine': {'length': 3, 'sunk': False},
+'Destroyer': {'length': 2, 'sunk': False}}
+
+## This dictionary and function are for randomly placing the ships on the grid.
+## starting with a randomly generated coordinate, it then proceeds to choose,
+## also randomly, the direction the ship will extend from that coord (vert or horiz)
+## and checks whether or not these coordinates are valid: are they on the grid?
+## Have any of the coordinates already been taken by any previously-placed ship?
+ship_placements = {}
+
+def place_ships():
+    start_coord_list = []
+    for ship in ships:
+        direction = random.choice(ship_direction)
+        coordinates = False
+        while coordinates == False:
+            coordinates = True
+            ship_coordinates = []
+            start_coord = ""
+            start_coord += random.choice(vert_axis_letters)
+            start_coord += random.choice(horiz_axis_nums)
+            start_coord_direct = (start_coord, direction)
+            if start_coord in valid_coordinates:
+                if start_coord_direct[1] == 'vert' and start_coord[1] != " ":
+                    temp_ship_coordinates = []
+                    for i in range(ships[ship]['length']):
+                        temp_ship_coordinates += [start_coord[0] + str(int(start_coord[1]) + i)]
+                    for coordinate in temp_ship_coordinates:
+                        if coordinate not in valid_coordinates:
+                            coordinates == False
+                    if coordinates == True:
+                        ship_coordinates += temp_ship_coordinates
+                        for coord in ship_coordinates:
+                            try:
+                                valid_coordinates.remove(coord)
+                            except:
+                                coordinates = False
+
+                elif start_coord_direct[1] == 'horiz' and start_coord[1] != " ":
+                    temp_ship_coordinates = []
+                    for i in range(ships[ship]['length']):
+                        new_start_coord = []
+                        new_letter = chr(ord(start_coord[0]) + i)
+                        new_start_coord = [str(new_letter) + str(start_coord[1])]
+                        temp_ship_coordinates += new_start_coord
+                    for coord in temp_ship_coordinates:
+                        if coord not in valid_coordinates:
+                            coordinates = False
+                    if coordinates == True:
+                        ship_coordinates += temp_ship_coordinates
+                        for coord in ship_coordinates:
+                            try:
+                                valid_coordinates.remove(coord)
+                            except:
+                                coordinates = False
+            if ship_coordinates == []:
+                coordinates = False
+        ship_placements[ship] = ship_coordinates
+
+#And here we execute the function:
+place_ships()
+
+## We create some variables for future use here; we take all the
+# ship coordinates out of the dictionary they are in and put them in a
+# list for ease of checking later:
+ship_coordinates = []
+ship_coordinates_lists = list(ship_placements.values())
+for list in ship_coordinates_lists:
+    for coord in list:
+        ship_coordinates += [coord]
+
+##Now we produce our grid, which will be filled with empty character strings
+# representing water,
+# but later they will/might be replaced with either '*' (hit) or 'O' (miss):
+grid = []
+base_list = []
+row_A = ['A:']
+row_B = ['B:']
+row_C = ['C:']
+row_D = ['D:']
+row_E = ['E:']
+row_F = ['F:']
+row_G = ['G:']
+row_H = ['H:']
+row_I = ['I:']
+row_J = ['J:']
+
+## ***NOTICE: I use "GRID_SIZE" here, below, unnecessarily. I was hoping to be
+# able to make the grid size changeable, but do not know how to automatically
+# create new variable names for the rows seen above that would allow for that
+# kind of variation. (IE: Feel free to satisfy my curiosity if you are reading
+# this and know of how! I would appreciate it! I tried to look it up to no avail!)***
+for i in range(GRID_SIZE):
+    base_list += [i]
+    row_A += ['-']
+    row_B += ['-']
+    row_C += ['-']
+    row_D += ['-']
+    row_E += ['-']
+    row_F += ['-']
+    row_G += ['-']
+    row_H += ['-']
+    row_I += ['-']
+    row_J += ['-']
+
+grid += [row_A]
+grid += [row_B]
+grid += [row_C]
+grid += [row_D]
+grid += [row_E]
+grid += [row_F]
+grid += [row_G]
+grid += [row_H]
+grid += [row_I]
+grid += [row_J]
+
+## All of our rows are ready, and assembled together in the grid, a list of lists.
+# Now we create a function for easily printing the grid.
+def print_grid():
+    print(horiz_axis_nums)
+    for list in grid:
+        print(list)
+
+
+## Next is an important function for updating the grid with hits or misses.
+# Again here I feel there may have been an easier way to do this, but since
+# I manually created all the row names (such as "row_A", etc.) I had to update
+# each individually... I think?
+def update_grid(shot, hit):
+    if ord(shot[0]) == 65:
+        if len(shot) == 2:
+            if hit == True:
+                row_A[int(shot[1])] = "*"
+            else:
+                row_A[int(shot[1])] = "O"
+        else:
+            if hit == True:
+                row_A[10] = "*"
+            else:
+                row_A[10] = "O"
+    if ord(shot[0]) == 66:
+        if len(shot) == 2:
+            if hit == True:
+                row_B[int(shot[1])] = "*"
+            else:
+                row_B[int(shot[1])] = "O"
+        else:
+            if hit == True:
+                row_B[10] = "*"
+            else:
+                row_B[10] = "O"
+    if ord(shot[0]) == 67:
+        if len(shot) == 2:
+            if hit == True:
+                row_C[int(shot[1])] = "*"
+            else:
+                row_C[int(shot[1])] = "O"
+        else:
+            if hit == True:
+                row_C[10] = "*"
+            else:
+                row_C[10] = "O"
+    if ord(shot[0]) == 68:
+        if len(shot) == 2:
+            if hit == True:
+                row_D[int(shot[1])] = "*"
+            else:
+                row_D[int(shot[1])] = "O"
+        else:
+            if hit == True:
+                row_D[10] = "*"
+            else:
+                row_D[10] = "O"
+    if ord(shot[0]) == 69:
+        if len(shot) == 2:
+            if hit == True:
+                row_E[int(shot[1])] = "*"
+            else:
+                row_E[int(shot[1])] = "O"
+        else:
+            if hit == True:
+                row_E[10] = "*"
+            else:
+                row_E[10] = "O"
+    if ord(shot[0]) == 70:
+        if len(shot) == 2:
+            if hit == True:
+                row_F[int(shot[1])] = "*"
+            else:
+                row_F[int(shot[1])] = "O"
+        else:
+            if hit == True:
+                row_F[10] = "*"
+            else:
+                row_F[10] = "O"
+    if ord(shot[0]) == 71:
+        if len(shot) == 2:
+            if hit == True:
+                row_G[int(shot[1])] = "*"
+            else:
+                row_G[int(shot[1])] = "O"
+        else:
+            if hit == True:
+                row_G[10] = "*"
+            else:
+                row_G[10] = "O"
+    if ord(shot[0]) == 72:
+        if len(shot) == 2:
+            if hit == True:
+                row_H[int(shot[1])] = "*"
+            else:
+                row_H[int(shot[1])] = "O"
+        else:
+            if hit == True:
+                row_H[10] = "*"
+            else:
+                row_H[10] = "O"
+    if ord(shot[0]) == 73:
+        if len(shot) == 2:
+            if hit == True:
+                row_I[int(shot[1])] = "*"
+            else:
+                row_I[int(shot[1])] = "O"
+        else:
+            if hit == True:
+                row_I[10] = "*"
+            else:
+                row_I[10] = "O"
+    if ord(shot[0]) == 74:
+        if len(shot) == 2:
+            if hit == True:
+                row_J[int(shot[1])] = "*"
+            else:
+                row_J[int(shot[1])] = "O"
+        else:
+            if hit == True:
+                row_J[10] = "*"
+            else:
+                row_J[10] = "O"
+    else:
+        None
+
+## Now heres the function the player sees most often.
+# This function gets the coordinates of the players shot with
+# their input, and runs execute shot, which in turn runs some
+# other functions:
+def get_coordinates(shells):
+    print("Here's the Grid:")
+    print("")
+    print("")
+    coordinates = False
+    hit = False
+    execute_shot(coordinates, shells)
+    shells -= 1
+    return shells
+
+## This function prints a message for the user on every turn,
+# telling them what ships are left, and their lengths:
+def ships_remaining():
+    ships_left = ""
+    for ship in ship_placements:
+        if len(ship_placements[ship]) > 0:
+            ships_left += ship + "(" + str(ships[ship]['length']) + ")  "
+    ships_left = ships_left.strip()
+    print(f"                           Ships left: {ships_left}")
+
+
+
+## This is the most important function I think in the program, and it
+# is quite long. It could have / probably should have been reduced and
+# comprised of multiple other functions. I tried to do that on two
+# occasions only to find that the functions produced errors, while the code
+# typed directly into this function worked fine, so I did it as you see here.
+#
+# This code takes the user's input coordinates and executes the shot, determining
+# if it is a hit or miss, and updating our valid coordinates for future shots, as
+# well as running the update_grid() function. It also determines, if the coords
+# are for any reason invalid, WHY, and sends back the proper error message to the
+# player:
+def execute_shot(coordinates, shells):
+    shot = ""
+    hit = False
+    while coordinates == False:
+        hit = False
+        #print(valid_coordinates_2)
+        #print(ship_coordinates)
+        print_grid()
+        for i in range(5):
+            print("")
+        print(f"Shells remaining: {shells}")
+        shot = input("Coordinates, sir? : ")
+
+        shot = shot.upper()
+        #print(f"Upper case: {shot}")
+        if shot != "":
+            if len(shot) == 2 or len(shot) == 3:
+                num_coord = ""
+                num_coord += shot[1]
+                if len(shot) == 3:
+                    num_coord += shot[2]
+                if shot[0].isalpha():
+                    try:
+                        num_coord = int(num_coord)
+                        if shot[0] in vert_axis_letters:
+                            if str(num_coord) in horiz_axis_nums:
+                                if shot in hit_coordinates:
+                                    hit = True
+                                if shot in valid_coordinates_2:
+                                    #print("Found in valid")
+                                    coordinates = True
+                                    #print(f"Valid coordinates_2 before removing shot: {valid_coordinates_2}")
+                                    valid_coordinates_2.remove(shot)
+                                    if shot in ship_coordinates:
+                                        hit = True
+                                        clear_terminal()
+## I tried making a hit() function for printing this hit message, and it failed to run,
+# but ran fine when I copy and pasted the function contents in, don't understand why...
+                                        print('''
+
+
+                                      <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><
+                                      {}    |**|     |**|    |**|   |**************|   |**|    {}
+                                      {}    |**|     |**|    |**|         |**|         |**|    {}
+                                      {}    |**|_____|**|    |**|         |**|         |**|    {}         
+                                      {}    |** ***** **|    |**|         |**|         |**|    {}        
+                                      {}    |**|-----|**|    |**|         |**|         |**|    {}          
+                                      {}    |**|     |**|    |**|         |**|                 {}            
+                                      {}    |**|     |**|    |**|         |**|        {****}   {}             
+                                      <>><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+
+
+                                        ''')
+                                        #print(f"Ship coordinates before hit: {ship_coordinates}")
+                                        ship_coordinates.remove(shot)
+                                        #print(f"After: {ship_coordinates}")
+                                        #print(f"Ship dict before: {ship_placements}")
+                                        for ship, coord in ship_placements.items():
+                                            if shot in coord:
+                                                coord.remove(shot)
+                                            if len(ship_placements[ship]) == 0 and not ships[ship]['sunk']:
+                                                    print(f"                                                                  {ship} sunk!")
+                                                    ships[ship]['sunk'] = True
+                                                    for i in range(5):
+                                                        print("")
+                                        hit_coordinates.append(shot)
+                                    else:
+                                        print('''
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                ___    ___         _      ______     _______
+                              ~OOO~  ~OOOO~      ~O~    ~OOOOOOO~   ~OOOOOOOO
+                             ~OO~OO~ ~OO~OO~           ~O~ ~ ~     ~O~ ~ ~
+                            ~OO~ ~OO~OO~~OO~     ~O~    ~OOOOO~    ~OOOOOO~
+                           ~OO~  ~OO~OO~ ~OO~    ~O~    ~ ~ ~O~     ~ ~ ~O~    
+                          ~OO~   ~OOOO~  ~OO~    ~O~  ~OOOOOO~  ~OOOOOOO~   {~~~}   {~~~}  {~~~}
+                                        
+   
+                                        
+                                        ''')
+                                else:
+                                    clear_terminal(15)
+                                    print("                 Sir, we have already fired upon that location, sir!")
+                                    print("")
+                            else:
+                                clear_terminal(15)
+                                print("                 Sir! That horizontal axis number ID\n                 is out of the scope of this battle, sir!")
+                                print("")
+                                hit = False
+                        else:
+                            clear_terminal(15)
+                            print("                 Sir, that vertical axis letter label\n                 is out of the scope of this battle, sir!")
+                            print("")
+                            hit = False
+                    except:
+                        clear_terminal(15)
+                        print("                 Sir, invalid format, sir!\n                 Second character must be an integer\n                 representing a column on the horizontal axis, sir!")
+                        print("")
+                        hit = False
+                        ships_remaining()
+                        input("                 "
+                              "                         <Press Enter>")
+                        break
+
+                else:
+                    clear_terminal(15)
+                    print("                     Sir, invalid format, sir!\n                 First character must be a letter\n                 representing a row on the vertical axis, sir!")
+                    print("")
+                    hit = False
+            else:
+                clear_terminal(15)
+                print("                 I'm sorry sir! I don't understand these coordinates, sir!\n                 They must be a letter between A and J followed by a number, sir,\n                 "
+                      "nothing else and nothing more, sir!")
+                print("")
+                hit = False
+        else:
+            clear_terminal(15)
+            print("                 Sir, you accidentally entered no coordinates, sir. Try again sir!\n                 Don't forget we press Enter to continue after each event, sir!")
+            print("")
+            hit = False
+            input("                                          <Press Enter>")
+            clear_terminal()
+            break
+        update_grid(shot, hit)
+        ships_remaining()
+        #print(f"Ship coordinates list: {ship_coordinates}")
+        input("                                                    <Press Enter>")
+        clear_terminal()
+
+
+
+
+## Here we create the loop that keeps the game running.
+# As long as shells remain or there are any ship's coordinates
+# not yet hit, the get_coordinates() function will repeat.
+# That function in turn calls all the other functions seen
+# in this program:
+while shells > 0 and ship_coordinates != []:
+    shells = get_coordinates(shells)
+
+
+## Now when the loop is finished and the game is over, we print out
+# victory or defeat messages and final game stats (shells remaining
+# and rank):
+if ship_coordinates == []:
+    print('''
+                                          
+                    ***           ***  ***********  ***********  ***********        **          *********    ***      ***   ***
+                     ***         ***   ***********  ***********  ***********      ******        ***    ***     ***  ***     ***
+                      ***       ***        ***      ***              ***        ****  ****      ***    ***      ** **       ***
+                       ***     ***         ***      ***              ***      ****      ****    *** ***          ***        ***
+                        ***   ***          ***      ***              ***    ****          ****  ***  ***         ***         
+                         *** ***       ***********  ***********      ***     ****       ****    ***   ***        ***        ***     
+                          ******       ***********  ***********      ***       ***********      ***    ***       ***        ***
+                                                                                                                                
+    ''')
+    for i in range(5):
+        time.sleep(1)
+        print("")
+else:
+    print('''
+    
+                    OOOOOOOOO      00000000000  00000000000  OOOOOOOOOOO        OOOOO0     OOOOOOOOOOO
+                    OOO     OOO    O0000000000  00000000000  OOOOOOOOOOO       OOO  OOO    OOOOOOOOOOO
+                    OOO       OOO  O00          000          OOO              OOO    OOO      OOO
+                    OOO       OOO  OOOOOOOOOOO  OOOOOOOOOOO  OOOOOOOOOOO     OOOOOOOOOOOO     OOO
+                    OOO      OOO   OOO          000          OOO            OOOOOOOOOOOOOO    OOO
+                    OOO     OOO    OOO00000000  000          OOOOOOOOOOO   OOO          000   OOO      000    000    000    000    000
+                    000OOOOOO      OOOOOOOOOOO  OOO          OOOOOOOOOOO  OOO            000  OOO      000    000    000    000    000
+    
+    
+    ''')
+    for i in range(5):
+        time.sleep(1)
+        print("")
+
+print("Game stats:")
+rank = "LOSER"
+if shells > 0:
+    rank = "Seaman Schmuckatelli (Barely squeaked by...: 6th Class)"
+if shells > 5:
+    rank = "Ensign Strategist (Below-Average: 5th Class)"
+if shells > 10:
+    rank = "Lieutenant Tactician (Average: 4th Class)"
+if shells > 15:
+    rank = "Commander Veteran (Impressive: 3rd Class)"
+if shells > 20:
+    rank = "Admiral Ackbar (Wowzer!: 2nd Class)"
+if shells > 30:
+    rank = "Kobayashi Maru Kirk (Did you cheat?!): 1st Class"
+time.sleep(1)
+print("")
+time.sleep(1)
+print("")
+print(f"Shells remaining: {shells}")
+print("")
+time.sleep(2)
+print(f"Rank: {rank}")
+for i in range(3):
+    print("")
+input()
+print("                                       GAME OVER!                                   ")
+print("")
+print("")
+print("")
+
+
